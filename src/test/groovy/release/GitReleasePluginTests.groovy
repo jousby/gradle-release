@@ -17,18 +17,25 @@ class GitReleasePluginTests extends Specification {
 
         exec(true, [:], testDir, 'git', 'init', "GitReleasePluginTestRemote")//create remote repo
         exec(true, [:], remoteRepo, 'git', 'config', '--add', 'receive.denyCurrentBranch', 'ignore')//suppress errors when pushing
-
+		exec(true, [:], remoteRepo, 'git', 'config',  'user.email', 'test@test.com')
+		exec(true, [:], remoteRepo, 'git', 'config',  'user.name', 'TestUser')
+		
         exec(false, [:], testDir, 'git', 'clone', remoteRepo.canonicalPath, 'GitReleasePluginTestLocal')
+		exec(true, [:], localRepo, 'git', 'config',  'user.email', 'test@test.com')
+		exec(true, [:], localRepo, 'git', 'config',  'user.name', 'TestUser')
 
         project = ProjectBuilder.builder().withName("GitReleasePluginTest").withProjectDir(localRepo).build()
         project.version = "1.1"
         project.apply plugin: ReleasePlugin
 
-        project.file("test.txt").withWriter {it << "test"}
+		def testTxtFile = project.file("test.txt")
+		testTxtFile.createNewFile()
+        testTxtFile.withWriter {it << "test"}		
         exec(true, [:], localRepo, 'git', 'add', 'test.txt')
         exec(true, [:], localRepo, 'git', 'commit', "-m", "test", 'test.txt')
 
         def props = project.file("gradle.properties")
+		props.createNewFile()
         props.withWriter { it << "version=${project.version}" }
         exec(true, [:], localRepo, 'git', 'add', 'gradle.properties')
     }

@@ -21,7 +21,7 @@ class GitReleasePluginIntegrationTests extends GitSpecification {
     def 'integration test'() {
         given: 'setting project version to 1.1'
         project.version = '1.1'
-        project.setProperty('gradle.release.useAutomaticVersion', "true")
+        project.ext.'gradle.release.useAutomaticVersion' = true
         gitAddAndCommit(localGit, "gradle.properties") { it << "version=$project.version" }
         localGit.push().setForce(true).call()
         when: 'calling release task indirectly'

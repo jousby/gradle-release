@@ -16,7 +16,9 @@ abstract class GitSpecification extends Specification {
     @Shared Git remoteGit
 
     static void gitAdd(Git git, String name, Closure content) {
-        new File(git.repository.getWorkTree(), name).withWriter content
+		def tmpFile = new File(git.repository.getWorkTree(), name)
+		tmpFile.createNewFile()
+        tmpFile.withWriter content
         git.add().addFilepattern(name).call()
     }
 
