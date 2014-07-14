@@ -62,6 +62,46 @@ class ReleasePlugin extends PluginHelper implements Plugin<Project> {
 					'commitNewVersion'
 			]
 		}
+		
+		project.task('releasePrepare', description: 'Verify project, release, and update version to next.', group: RELEASE_GROUP, type: GradleBuild) {
+			startParameter = project.getGradle().startParameter.newInstance()
+
+			tasks = [
+					//  0. (This Plugin) Initializes the corresponding SCM plugin (Git/Bazaar/Svn/Mercurial).
+					'initScmPlugin',
+					//  1. (SCM Plugin) Check to see if source needs to be checked in.
+					'checkCommitNeeded',
+					//  2. (SCM Plugin) Check to see if source is out of date
+					'checkUpdateNeeded',
+					//  3. (This Plugin) Update Snapshot version if used
+					//     Needs to be done before checking for snapshot versions since the project might depend on other
+					//     Modules within the same project.
+					'unSnapshotVersion',
+					//  4. (This Plugin) Confirm this release version
+					'confirmReleaseVersion',
+					//  5. (This Plugin) Check for SNAPSHOT dependencies if required.
+					'checkSnapshotDependencies',
+					//  6. (This Plugin) Build && run Unit tests
+					'build',
+					//  7. (This Plugin) Commit Snapshot update (if done)
+					'preTagCommit'
+			]
+		}
+		
+		project.task('releasePerform', description: 'Verify project, release, and update version to next.', group: RELEASE_GROUP, type: GradleBuild) {
+			startParameter = project.getGradle().startParameter.newInstance()
+
+			tasks = [					
+				    //  8. (This Plugin) Build && run Unit tests
+					'build',
+					//  9. (SCM Plugin) Create tag of release.
+					'createReleaseTag',
+					// 10. (This Plugin) Update version to next version.
+					'updateVersion',
+					// 11. (This Plugin) Commit version update.
+					'commitNewVersion'
+			]
+		}
 
 		project.task('initScmPlugin', group: RELEASE_GROUP,
 				description: 'Initializes the SCM plugin (based on hidden directories in your project\'s directory)') << this.&initScmPlugin
@@ -82,7 +122,7 @@ class ReleasePlugin extends PluginHelper implements Plugin<Project> {
 
 
 		project.gradle.taskGraph.afterTask { Task task, TaskState state ->
-			if (state.failure && task.name == "release") {
+			if (state.failure && (task.name == "release" || task.name == "releasePrepare" || task.name == "releasePerform")) {
 				if (releaseConvention().revertOnFail && project.file(releaseConvention().versionPropertyFile)?.exists()) {
 					log.error("Release process failed, reverting back any changes made by Release Plugin.")
 					this.scmPlugin.revert()

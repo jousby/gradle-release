@@ -1,5 +1,7 @@
 apply plugin: 'groovy'
 apply plugin: 'idea'
+apply plugin: 'eclipse'
+apply plugin: 'maven-publish'
 
 defaultTasks 'clean', 'build'
 
@@ -13,4 +15,20 @@ dependencies {
 	testCompile("org.spockframework:spock-core:$spockVersion") { exclude group: 'org.codehaus.groovy' }
 	testCompile "junit:junit:$junitVersion",
 			    "org.ajoberstar:gradle-git:$gradleGitVersion"
+}
+
+task sourceJar(type: Jar) {
+	from sourceSets.main.allJava
+}
+
+publishing {
+	publications {
+		mavenJava(MavenPublication) {
+			from components.java
+	
+			artifact sourceJar {
+				classifier "sources"
+			}
+		}
+	}
 }
